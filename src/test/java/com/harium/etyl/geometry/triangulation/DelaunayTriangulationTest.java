@@ -63,7 +63,6 @@ public class DelaunayTriangulationTest {
 
     @Test
     public void findConnectedVerticesTest() {
-
         Vector3 pointA = new Vector3(0, 0, 0);
         Vector3 pointB = new Vector3(2, 2, 0);
         Vector3 pointC = new Vector3(4, 0, 0);
