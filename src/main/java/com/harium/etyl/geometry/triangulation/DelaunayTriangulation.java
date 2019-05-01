@@ -1,11 +1,11 @@
-package jdt.triangulation;
+package com.harium.etyl.geometry.triangulation;
 
 import com.badlogic.gdx.math.Vector3;
 import com.harium.etyl.geometry.BoundingBox;
 
 import java.util.*;
 
-import static jdt.triangulation.PointLinePosition.ON_SEGMENT;
+import static com.harium.etyl.geometry.triangulation.PointLinePosition.ON_SEGMENT;
 
 
 /**
@@ -38,7 +38,7 @@ import static jdt.triangulation.PointLinePosition.ON_SEGMENT;
  * For the original applet see: http://www.pi6.fernuni-hagen.de/GeomLab/VoroGlide/ . <br>
  */
 
-public class DelaunayTriangulation {
+public class DelaunayTriangulation extends BaseTriangulation {
 
 	// the first and last points (used only for first step construction)
 	private Vector3 firstP;
@@ -50,20 +50,9 @@ public class DelaunayTriangulation {
 	// the first and last triangles (used only for first step construction)
 	private Triangle firstT, lastT;
 
-	// the triangle the fond (search start from
-	private Triangle startTriangle;
 
 	// the triangle the convex hull starts from
 	public Triangle startTriangleHull;
-
-	// additional data 4/8/05 used by the iterators
-	//private Set<Point3D> vertices;
-	//private List<Triangle> triangles;
-
-	// The triangles that were deleted in the last deletePoint iteration.
-	//private List<Triangle> deletedTriangles;
-	// The triangles that were added in the last deletePoint iteration.
-	//private List<Triangle> addedTriangles;
 
 	private int modCount = 0, modCount2 = 0;
 
@@ -87,25 +76,6 @@ public class DelaunayTriangulation {
 		modCount2 = 0;
 		allCollinear = true;
 	}
-
-	/**
-	 * the number of (different) vertices in this triangulation.
-	 *
-	 * @return the number of vertices in the triangulation (duplicates are
-	 *         ignore - set size).
-	 */
-	/*public int size() {
-		return vertices.size();
-	}*/
-
-	/**
-	 * @return the number of triangles in the triangulation. <br />
-	 * Note: includes infinife faces!!.
-	 */
-	/*public int trianglesSize() {
-		this.generateTriangles();
-		return triangles.size();
-	}*/
 
 	/**
 	 * returns the changes counter for this triangulation
@@ -137,67 +107,7 @@ public class DelaunayTriangulation {
 			tt = tt.canext;
 		} while (tt != t && !tt.halfplane);
 
-		// Update index with changed triangles
-		/*if(gridIndex != null) {
-			gridIndex.updateIndex(getLastUpdatedTriangles());
-		}*/
 	}
-
-	/**
-	 * Deletes the given point from this.
-	 * @param pointToDelete The given point to delete.
-	 *
-	 * Implementation of the Mostafavia, Gold & Dakowicz algorithm (2002).
-	 *
-	 * By Eyal Roth & Doron Ganel (2009).
-	 */
-	/*public void deletePoint(Point3D pointToDelete) {
-
-		// Finding the triangles to delete.
-		List<Triangle> deletedTriangles = findConnectedTriangles(pointToDelete);
-
-		Set<Point3D> pointsSet = new HashSet<Point3D>();
-		List<Point3D> pointsVec = new ArrayList<Point3D>();
-
-		if (deletedTriangles != null) {
-			connectTriangles(pointToDelete, pointsSet, pointsVec, triangles);
-		} else {
-			System.err.println("Error: can't delete a point on the perimeter");
-			return;
-		}
-
-		while(pointsVec.size() >= 3) {
-			// Getting a triangle to add, and saving it.
-			Triangle triangle = findTriangle(pointsVec, pointToDelete);
-			addedTriangles.add(triangle);
-
-			// Finding the point on the diagonal (pointToDelete,p)
-			Point3D p = findDiagonal(triangle,pointToDelete);
-
-			for(Point3D tmpP : pointsVec) {
-				if(tmpP.equals(p)) {
-					pointsVec.remove(tmpP);
-					break;
-				}
-			}
-		}
-
-		//updating the trangulation
-		deleteUpdate(pointToDelete, deletedTriangles);
-
-		for(Triangle t:deletedTriangles) {
-			if(t.equals(startTriangle)) {
-				startTriangle = addedTriangles.get(0);
-				break;
-			}
-		}
-
-		triangles.removeAll(deletedTriangles);
-		triangles.addAll(addedTriangles);
-		vertices.remove(pointToDelete);
-
-		addedTriangles.clear();
-	}*/
 
 	/** return a point from the trangulation that is close to pointToDelete
 	 * @param pointToDelete the point that the user wants to delete
@@ -237,340 +147,6 @@ public class DelaunayTriangulation {
 	private float distanceXY(Vector3 p, Vector3 q) {
 		return p.dst(q);
 	}
-
-	//updates the trangulation after the triangles to be deleted and
-	//the triangles to be added were found
-	//by Doron Ganel & Eyal Roth(2009)
-	/*private void deleteUpdate(Point3D pointToDelete, List<Triangle> deletedTriangles) {
-
-		for(int j = 0; j < addedTriangles.size(); j++) {
-
-			Triangle addedTriangle1 = addedTriangles.get(j);
-
-			for(Triangle deletedTriangle : deletedTriangles) {
-				if(addedTriangle1.shareSegment(deletedTriangle)) {
-					updateNeighbor(addedTriangle1,deletedTriangle,pointToDelete);
-				}
-			}
-
-			for(int i = 0; i < addedTriangles.size(); i++) {
-				Triangle addedTriangle2 = addedTriangles.get(i);
-				if(addedTriangle1.equals(addedTriangle2)) {
-					continue;
-				}
-
-				if(addedTriangle1.shareSegment(addedTriangle2)) {
-					updateNeighbor(addedTriangle1,addedTriangle2);
-				}
-			}
-		}
-
-		// Update index with changed triangles
-		if(gridIndex != null) {
-			gridIndex.updateIndex(addedTriangles.iterator());
-		}
-	}*/
-
-	//update the neighbors of the addedTriangle and deletedTriangle
-	//we assume the 2 triangles share a segment
-	//by Doron Ganel & Eyal Roth(2009)
-	/*private void updateNeighbor(Triangle addedTriangle, Triangle deletedTriangle,Point3D pointToDelete) {
-		Point3D delA = deletedTriangle.p1();
-		Point3D delB = deletedTriangle.p2();
-		Point3D delC = deletedTriangle.p3();
-		Point3D addA = addedTriangle.p1();
-		Point3D addB = addedTriangle.p2();
-		Point3D addC = addedTriangle.p3();
-
-		//updates the neighbor of the deleted triangle to point to the added triangle
-		//setting the neighbor of the added triangle
-		if(pointToDelete.equals(delA)) {
-			deletedTriangle.next_23().switchneighbors(deletedTriangle,addedTriangle);
-			//AB-BC || BA-BC
-			if((addA.equals(delB)&&addB.equals(delC)) || (addB.equals(delB)&&addA.equals(delC))) {                    
-				addedTriangle.abnext = deletedTriangle.next_23();                
-			}
-			//AC-BC || CA-BC
-			else if((addA.equals(delB)&&addC.equals(delC)) || (addC.equals(delB)&&addA.equals(delC))) {                    
-				addedTriangle.canext = deletedTriangle.next_23();                
-			}
-			//BC-BC || CB-BC
-			else {
-				addedTriangle.bcnext = deletedTriangle.next_23();
-			}
-		}
-		else if(pointToDelete.equals(delB)) {
-			deletedTriangle.next_31().switchneighbors(deletedTriangle,addedTriangle);
-			//AB-AC || BA-AC
-			if((addA.equals(delA)&&addB.equals(delC)) || (addB.equals(delA)&&addA.equals(delC))) {                    
-				addedTriangle.abnext = deletedTriangle.next_31();                
-			}
-			//AC-AC || CA-AC
-			else if((addA.equals(delA)&&addC.equals(delC)) || (addC.equals(delA)&&addA.equals(delC))) {                    
-				addedTriangle.canext = deletedTriangle.next_31();                
-			}
-			//BC-AC || CB-AC
-			else {
-				addedTriangle.bcnext = deletedTriangle.next_31();
-			}
-		}
-		//equals c
-		else {
-			deletedTriangle.next_12().switchneighbors(deletedTriangle,addedTriangle);
-			//AB-AB || BA-AB
-			if((addA.equals(delA)&&addB.equals(delB)) || (addB.equals(delA)&&addA.equals(delB))) {                    
-				addedTriangle.abnext = deletedTriangle.next_12();                
-			}
-			//AC-AB || CA-AB
-			else if((addA.equals(delA)&&addC.equals(delB)) || (addC.equals(delA)&&addA.equals(delB))) {                    
-				addedTriangle.canext = deletedTriangle.next_12();                
-			}
-			//BC-AB || CB-AB
-			else {
-				addedTriangle.bcnext = deletedTriangle.next_12();
-			}
-		}
-	}*/
-
-	//update the neighbors of the 2 added Triangle s
-	//we assume the 2 triangles share a segment
-	//by Doron Ganel & Eyal Roth(2009)
-	/*private void updateNeighbor(Triangle addedTriangle1,Triangle addedTriangle2) {
-		Point3D A1 = addedTriangle1.p1();
-		Point3D B1 = addedTriangle1.p2();
-		Point3D C1 = addedTriangle1.p3();
-		Point3D A2 = addedTriangle2.p1();
-		Point3D B2 = addedTriangle2.p2();
-		Point3D C2 = addedTriangle2.p3();
-
-		//A1-A2
-		if(A1.equals(A2)) {
-			//A1B1-A2B2
-			if(B1.equals(B2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//A1B1-A2C2
-			else if(B1.equals(C2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//A1C1-A2B2
-			else if(C1.equals(B2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//A1C1-A2C2
-			else {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-		}
-		//A1-B2
-		else if(A1.equals(B2)) {
-			//A1B1-B2A2
-			if(B1.equals(A2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//A1B1-B2C2
-			else if(B1.equals(C2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-			//A1C1-B2A2
-			else if(C1.equals(A2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//A1C1-B2C2
-			else {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-		}
-		//A1-C2
-		else if(A1.equals(C2)) {
-			//A1B1-C2A2
-			if(B1.equals(A2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//A1B1-C2B2
-			if(B1.equals(B2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-			//A1C1-C2A2
-			if(C1.equals(A2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//A1C1-C2B2
-			else {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-		}
-		//B1-A2
-		else if(B1.equals(A2)) {
-			//B1A1-A2B2
-			if(A1.equals(B2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//B1A1-A2C2
-			else if(A1.equals(C2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//B1C1-A2B2
-			else if(C1.equals(B2)) {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//B1C1-A2C2
-			else {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-		}
-		//B1-B2
-		else if(B1.equals(B2)) {
-			//B1A1-B2A2
-			if(A1.equals(A2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//B1A1-B2C2
-			else if(A1.equals(C2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-			//B1C1-B2A2
-			else if(C1.equals(A2)) {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//B1C1-B2C2
-			else {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-		}
-		//B1-C2
-		else if(B1.equals(C2)) {
-			//B1A1-C2A2
-			if(A1.equals(A2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//B1A1-C2B2
-			if(A1.equals(B2)) {
-				addedTriangle1.abnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-			//B1C1-C2A2
-			if(C1.equals(A2)) {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//B1C1-C2B2
-			else {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-		}
-		//C1-A2
-		else if(C1.equals(A2)) {
-			//C1A1-A2B2
-			if(A1.equals(B2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//C1A1-A2C2
-			else if(A1.equals(C2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//C1B1-A2B2
-			else if(B1.equals(B2)) {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//C1B1-A2C2
-			else {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-		}
-		//C1-B2
-		else if(C1.equals(B2)) {
-			//C1A1-B2A2
-			if(A1.equals(A2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//C1A1-B2C2
-			else if(A1.equals(C2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-			//C1B1-B2A2
-			else if(B1.equals(A2)) {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.abnext = addedTriangle1;
-			}
-			//C1B1-B2C2
-			else {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-		}
-		//C1-C2
-		else if(C1.equals(C2)) {
-			//C1A1-C2A2
-			if(A1.equals(A2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//C1A1-C2B2
-			if(A1.equals(B2)) {
-				addedTriangle1.canext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-			//C1B1-C2A2
-			if(B1.equals(A2)) {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.canext = addedTriangle1;
-			}
-			//C1B1-C2B2
-			else {
-				addedTriangle1.bcnext = addedTriangle2;
-				addedTriangle2.bcnext = addedTriangle1;
-			}
-		}
-	}*/
-
-	//finds the a point on the triangle that if connect it to "point" (creating a segment)
-	//the other two points of the triangle will be to the left and to the right of the segment
-	//by Doron Ganel & Eyal Roth(2009)
-	/*private Point3D findDiagonal(Triangle triangle, Point3D point) {
-		Point3D p1 = triangle.p1();
-		Point3D p2 = triangle.p2();
-		Point3D p3 = triangle.p3();
-
-		if((PointLineTest.pointLineTest(point, p3, p1) == PointLineTest.LEFT)&&
-				(PointLineTest.pointLineTest(point, p3, p2) == PointLineTest.RIGHT))
-			return p3;
-		if((PointLineTest.pointLineTest(point,p2,p3) == PointLineTest.LEFT)&&
-				(PointLineTest.pointLineTest(point,p2, p1) == PointLineTest.RIGHT))
-			return p2;
-		if((PointLineTest.pointLineTest(point, p1, p2) == PointLineTest.LEFT)&&
-				(PointLineTest.pointLineTest(point, p1, p3) == PointLineTest.RIGHT))
-			return p1;
-		return null;
-	}*/
 
 	/**
 	 * Calculates a Voronoi cell for a given neighborhood
@@ -673,30 +249,6 @@ public class DelaunayTriangulation {
 			return result;
 		}
 	}
-
-	/**
-	 * returns an iterator object involved in the last update.
-	 * @return iterator to all triangles involved in the last update of the
-	 *         triangulation NOTE: works ONLY if the are triangles (it there is
-	 *         only a half plane - returns an empty iterator
-	 */
-	/*public Iterator<Triangle> getLastUpdatedTriangles() {
-		List<Triangle> tmp = new ArrayList<Triangle>();
-		if (this.trianglesSize() > 1) {
-			Triangle t = currT;
-			allTriangles(t, tmp, this.modCount);
-		}
-		return tmp.iterator();
-	}*/
-
-	/*private void allTriangles(Triangle curr, List<Triangle> front, int mc) {
-		if (curr != null && curr.modCounter == mc && !front.contains(curr)) {
-			front.add(curr);
-			allTriangles(curr.abnext, front, mc);
-			allTriangles(curr.bcnext, front, mc);
-			allTriangles(curr.canext, front, mc);
-		}
-	}*/
 
 	private Triangle insertPointSimple(Set<Vector3> vertices, Vector3 p) {
 		if (!allCollinear) {
@@ -1009,101 +561,6 @@ public class DelaunayTriangulation {
 		return ans;
 	}
 
-	/**
-	 * finds the triangle the query point falls in, note if out-side of this
-	 * triangulation a half plane triangle will be returned (see contains), the
-	 * search has expected time of O(n^0.5), and it starts form a fixed triangle
-	 * (this.startTriangle),
-	 *
-	 * @param p
-	 *            query point
-	 * @return the triangle that point p is in.
-	 */
-	public Triangle find(Vector3 p) {
-
-		// If triangulation has a spatial index try to use it as the starting triangle
-		Triangle searchTriangle = startTriangle;
-		/*if(gridIndex != null) {
-			Triangle indexTriangle = gridIndex.findCellTriangleOf(p);
-			if(indexTriangle != null)
-				searchTriangle = indexTriangle;
-		}*/
-
-		// Search for the point's triangle starting from searchTriangle
-		return find(searchTriangle, p);
-	}
-
-	/**
-	 * finds the triangle the query point falls in, note if out-side of this
-	 * triangulation a half plane triangle will be returned (see contains). the
-	 * search starts from the the start triangle
-	 *
-	 * @param p
-	 *            query point
-	 * @param start
-	 *            the triangle the search starts at.
-	 * @return the triangle that point p is in..
-	 */
-	public Triangle find(Vector3 p, Triangle start) {
-		if (start == null)
-			start = this.startTriangle;
-		Triangle T = find(start, p);
-		return T;
-	}
-
-
-	private static Triangle find(Triangle curr, Vector3 p) {
-		if (p == null)
-			return null;
-
-		Triangle next_t;
-		if (curr.halfplane) {
-			next_t = findnext2(p, curr);
-			if (next_t == null || next_t.halfplane)
-				return curr;
-			curr = next_t;
-		}
-		while (true) {
-			next_t = findnext1(p, curr);
-			if (next_t == null)
-				return curr;
-			if (next_t.halfplane)
-				return next_t;
-			curr = next_t;
-		}
-	}
-
-	/*
-	 * assumes v is NOT an halfplane!
-	 * returns the next triangle for find.
-	 */
-	private static Triangle findnext1(Vector3 p, Triangle v) {
-		if (!v.abnext.halfplane && PointLineTest.pointLineTest(v.a, v.b, p) == PointLinePosition.RIGHT)
-			return v.abnext;
-		if (!v.bcnext.halfplane && PointLineTest.pointLineTest(v.b, v.c, p) == PointLinePosition.RIGHT)
-			return v.bcnext;
-		if (!v.canext.halfplane && PointLineTest.pointLineTest(v.c, v.a, p) == PointLinePosition.RIGHT)
-			return v.canext;
-		if (PointLineTest.pointLineTest(v.a, v.b, p) == PointLinePosition.RIGHT)
-			return v.abnext;
-		if (PointLineTest.pointLineTest(v.b, v.c, p) == PointLinePosition.RIGHT)
-			return v.bcnext;
-		if (PointLineTest.pointLineTest(v.c, v.a, p) == PointLinePosition.RIGHT)
-			return v.canext;
-		return null;
-	}
-
-	/** assumes v is an halfplane! - returns another (none halfplane) triangle */
-	private static Triangle findnext2(Vector3 p, Triangle v) {
-		if (v.abnext != null && !v.abnext.halfplane)
-			return v.abnext;
-		if (v.bcnext != null && !v.bcnext.halfplane)
-			return v.bcnext;
-		if (v.canext != null && !v.canext.halfplane)
-			return v.canext;
-		return null;
-	}
-
 	public List<Vector3> findConnectedVertices(Vector3 point, List<Triangle> triangles) {
 		// Finding the triangles to delete.
 		List<Triangle> deletedTriangles = findConnectedTriangles(point);
@@ -1166,14 +623,6 @@ public class DelaunayTriangulation {
 		}
 	}
 
-	/*private boolean onPerimeter(List<Triangle> triangles) {
-		for(Triangle t : triangles) {
-			if(t.isHalfplane())
-				return true;
-		}
-		return false;
-	}*/
-
 	// Walks on a consistent side of triangles until a cycle is achieved.
 	//By Doron Ganel & Eyal Roth
 	// changed to public by Udi
@@ -1199,56 +648,6 @@ public class DelaunayTriangulation {
 
 		return triangles;
 	}
-
-	/*
-	 * find triangle to be added to the triangulation
-	 * 
-	 * By: Doron Ganel & Eyal Roth
-	 * 
-	 */
-	/*private Triangle findTriangle(List<Point3D> pointsVec, Point3D p) {
-		Point3D[] arrayPoints = new Point3D[pointsVec.size()];
-		pointsVec.toArray(arrayPoints);
-
-		int size = arrayPoints.length;
-		if(size < 3) {
-			return null;
-		}
-		// if we left with 3 points we return the triangle
-		else if(size==3) {
-			return new Triangle(arrayPoints[0],arrayPoints[1],arrayPoints[2]);
-		}
-		else {
-			for(int i=0;i<=size-1;i++) {
-				Point3D p1 = arrayPoints[i];
-				int j = i+1;
-				int k = i+2;
-				if(j >= size) {
-					j = 0;
-					k = 1;
-				}
-				//check IndexOutOfBound
-				else if(k >= size) {
-					k = 0;
-				}
-
-				Point3D p2 = arrayPoints[j];
-				Point3D p3 = arrayPoints[k];
-
-				//check if the triangle is not re-entrant and not encloses p
-				Triangle t = new Triangle(p1,p2,p3);
-				if (t.calcDet() >= 0) {
-					if (!t.contains(p)||((size == 4) && !t.containsBoundaryIsOutside(p))) {                                                       
-						if(!t.fallInsideCircumcircle(arrayPoints)) {
-							return t;
-						}
-					}
-				}
-			}
-		}
-
-		return null;
-	}*/
 
 	/**
 	 *
@@ -1350,19 +749,6 @@ public class DelaunayTriangulation {
 	}
 
 	/**
-	 * computes the current set (vector) of all triangles and
-	 * return an iterator to them.
-	 *
-	 * @return an iterator to the current set of all triangles.
-	 */
-	/*public Iterator<Triangle> trianglesIterator() {
-		if (this.size() <= 2)
-			triangles = new ArrayList<Triangle>();
-		initTriangles();
-		return triangles.iterator();
-	}*/
-
-	/**
 	 * returns an iterator to the set of all the points on the XY-convex hull
 	 * @return iterator to the set of all the points on the XY-convex hull.
 	 */
@@ -1418,22 +804,6 @@ public class DelaunayTriangulation {
 			front.add(nextTriangle);
 		}
 	}
-
-	/**
-	 * Index the triangulation using a grid index
-	 *  @param   xCellCount        number of grid cells in a row
-	 *  @param   yCellCount        number of grid cells in a column
-	 */
-	/*public void indexData(int xCellCount, int yCellCount) {
-		gridIndex = new GridIndex(this, xCellCount, yCellCount);
-	}*/
-
-	/**
-	 * Remove any existing spatial indexing
-	 */
-	/*public void removeIndex() {
-		gridIndex = null;
-	}*/
 
 	/**
 	 * Triangulate given points.

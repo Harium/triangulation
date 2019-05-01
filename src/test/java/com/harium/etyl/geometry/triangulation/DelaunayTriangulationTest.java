@@ -1,6 +1,9 @@
-package jdt.triangulation;
+package com.harium.etyl.geometry.triangulation;
 
 import com.badlogic.gdx.math.Vector3;
+import com.harium.etyl.geometry.triangulation.DelaunayTriangulation;
+import com.harium.etyl.geometry.triangulation.Triangle;
+import com.harium.etyl.geometry.triangulation.Triangulation;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,9 +11,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TriangulationTest {
+public class DelaunayTriangulationTest {
 
-    private DelaunayTriangulation triangulation;
+    private Triangulation triangulation;
 
     @Before
     public void setUp() {
@@ -73,11 +76,6 @@ public class TriangulationTest {
         List<Triangle> triangles = triangulation.triangulate(pointCloud);
 
         Assert.assertEquals(1, triangles.size());
-
-		/*List<Point3D> connected = triangulation.findConnectedVertices(pointA, triangles);
-
-		Assert.assertNotNull(connected);
-		Assert.assertEquals(2, connected.size());*/
     }
 
 }

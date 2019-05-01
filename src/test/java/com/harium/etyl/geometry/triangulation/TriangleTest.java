@@ -1,6 +1,7 @@
-package jdt.triangulation;
+package com.harium.etyl.geometry.triangulation;
 
 import com.badlogic.gdx.math.Vector3;
+import com.harium.etyl.geometry.triangulation.Triangle;
 import org.junit.Assert;
 import org.junit.Test;
 

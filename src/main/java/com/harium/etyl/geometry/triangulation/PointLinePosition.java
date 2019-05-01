@@ -1,4 +1,4 @@
-package jdt.triangulation;
+package com.harium.etyl.geometry.triangulation;
 
 public enum PointLinePosition {
 
